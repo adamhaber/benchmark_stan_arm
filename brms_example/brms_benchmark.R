@@ -38,6 +38,8 @@ mod1 <- cmdstan_model(write_stan_file(stancode(fit1_brm)), cpp_options = list(st
 single <- c()
 multi <- c()
 seeds <- c(1,2,3,4,5)
+single_neff <- c()
+multi_neff <- c()
 for (seed in seeds) {
   fit0 <- mod0$sample(data0,
                      seed = seed,
@@ -52,8 +54,12 @@ for (seed in seeds) {
   
   single <- c(single, fit0$time()$total)
   multi <- c(multi, fit1$time()$total)
+  single_neff <- c(mean(fit0$summary(NULL,c("ess_bulk"))$ess_bulk), single_neff)
+  multi_neff <- c(mean(fit1$summary(NULL,c("ess_bulk"))$ess_bulk), multi_neff)
 }
 data.frame(single=single,
            multi=multi,
            optim=optim,
+           single_neff=single_neff,
+           multi_neff=multi_neff,
            seed=seeds) %>% write.csv(., file="brms_model.csv")

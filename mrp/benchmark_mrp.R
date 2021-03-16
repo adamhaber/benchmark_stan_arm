@@ -10,6 +10,9 @@ mod2 <- cmdstan_model("mrp_ref2.stan", cpp_options = list(stan_threads = TRUE, s
 single <- c()
 multi <- c()
 optim <- c()
+single_neff <- c()
+multi_neff <- c()
+optim_neff <- c()
 seeds <- c(1,2,3,4,5)
 for (seed in seeds) {
   fit0 <- mod0$sample(data,
@@ -32,10 +35,16 @@ for (seed in seeds) {
   single <- c(single, fit0$time()$total)
   multi <- c(multi, fit1$time()$total)
   optim <- c(optim, fit2$time()$total)
+  single_neff <- c(mean(fit0$summary(NULL,c("ess_bulk"))$ess_bulk), single_neff)
+  multi_neff <- c(mean(fit1$summary(NULL,c("ess_bulk"))$ess_bulk), multi_neff)
+  optim_neff <- c(mean(fit2$summary(NULL,c("ess_bulk"))$ess_bulk), optim_neff)
 }
 data.frame(single=single,
            multi=multi,
            optim=optim,
+           single_neff=single_neff,
+           multi_neff=multi_neff,
+           optim_neff=optim_neff,
            seed=seeds) %>% write.csv(., file="mrp.csv")
 
 
