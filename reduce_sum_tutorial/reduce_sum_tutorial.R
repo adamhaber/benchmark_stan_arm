@@ -17,25 +17,19 @@ for (seed in seeds) {
   fit0 <- logistic0$sample(redcard_data,
                            seed = seed,
                            chains = 4,
-                           parallel_chains = 4,
-                           iter_warmup = 100,
-                           iter_sampling = 100)
+                           parallel_chains = 4)
   
   fit1 <- logistic1$sample(redcard_data,
                            chains = 4,
                            seed = seed,
                            parallel_chains = 4,
-                           threads_per_chain = 8,
-                           iter_warmup = 100,
-                           iter_sampling = 100)
+                           threads_per_chain = 8)
   
   fit2 <- logistic2$sample(redcard_data,
                            chains = 4,
                            seed = seed,
                            parallel_chains = 4,
-                           threads_per_chain = 8,                           
-                           iter_warmup = 100,
-                           iter_sampling = 100)
+                           threads_per_chain = 8)
   
   single <- c(single, fit0$time()$total)
   multi <- c(multi, fit1$time()$total)
