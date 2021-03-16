@@ -12,7 +12,7 @@ redcard_data$grainsize <- 1
 single <- c()
 multi <- c()
 optim <- c()
-seeds <- c(1,2,3)
+seeds <- c(1,2,3,4,5)
 for (seed in seeds) {
   fit0 <- logistic0$sample(redcard_data,
                            seed = seed,

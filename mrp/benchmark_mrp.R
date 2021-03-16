@@ -10,7 +10,7 @@ mod2 <- cmdstan_model("mrp_ref2.stan", cpp_options = list(stan_threads = TRUE, s
 single <- c()
 multi <- c()
 optim <- c()
-seeds <- c(1,2,3)
+seeds <- c(1,2,3,4,5)
 for (seed in seeds) {
   fit0 <- mod0$sample(data,
                            seed = seed,

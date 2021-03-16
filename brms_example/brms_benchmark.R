@@ -37,7 +37,7 @@ mod1 <- cmdstan_model(write_stan_file(stancode(fit1_brm)), cpp_options = list(st
 
 single <- c()
 multi <- c()
-seeds <- c(1,2,3)
+seeds <- c(1,2,3,4,5)
 for (seed in seeds) {
   fit0 <- mod0$sample(data0,
                      seed = seed,
