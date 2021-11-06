@@ -1,6 +1,6 @@
 ## Install instructions
 
-Ubuntu 20.04 images were used for both the `c6g` as well as the `c5` instance.
+The default Ubuntu 20.04 (AMI `ami-09d9c897fc36713bf`) image was used for both the `c6g` as well as the `c5` instance.
 
 ### Step 1: Install Linux dependencies
 
@@ -8,7 +8,6 @@ Ubuntu 20.04 images were used for both the `c6g` as well as the `c5` instance.
 sudo apt update
 sudo apt install r-base-core
 ```
-
 
 ### Step 2: Install CmdStanR and CmdStan
 
