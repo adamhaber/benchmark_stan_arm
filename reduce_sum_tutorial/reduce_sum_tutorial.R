@@ -2,49 +2,64 @@ library(cmdstanr)
 
 d <- read.csv("RedcardData.csv", stringsAsFactors = FALSE)
 d2 <- d[!is.na(d$rater1),]
+
 redcard_data <- list(n_redcards = d2$redCards, n_games = d2$games, rating = d2$rater1)
 redcard_data$N <- nrow(d2)
-logistic0 <- cmdstan_model("logistic0.stan")
-logistic1 <- cmdstan_model("logistic1.stan", cpp_options = list(stan_threads = TRUE))
-logistic2 <- cmdstan_model("logistic2.stan", cpp_options = list(stan_threads = TRUE, stan_cpp_optims = TRUE))
 redcard_data$grainsize <- 1
 
-single <- c()
-multi <- c()
-optim <- c()
-single_neff <- c()
-multi_neff <- c()
-optim_neff <- c()
-seeds <- c(1,2,3,4,5)
-for (seed in seeds) {
-  fit0 <- logistic0$sample(redcard_data,
-                           seed = seed,
-                           chains = 4,
-                           parallel_chains = 4)
-  
-  fit1 <- logistic1$sample(redcard_data,
-                           chains = 4,
-                           seed = seed,
-                           parallel_chains = 4,
-                           threads_per_chain = 8)
-  
-  fit2 <- logistic2$sample(redcard_data,
-                           chains = 4,
-                           seed = seed,
-                           parallel_chains = 4,
-                           threads_per_chain = 8)
-  
-  single <- c(single, fit0$time()$total)
-  multi <- c(multi, fit1$time()$total)
-  optim <- c(optim, fit2$time()$total)
-  single_neff <- c(mean(fit0$summary(NULL,c("ess_bulk"))$ess_bulk), single_neff)
-  multi_neff <- c(mean(fit1$summary(NULL,c("ess_bulk"))$ess_bulk), multi_neff)
-  optim_neff <- c(mean(fit2$summary(NULL,c("ess_bulk"))$ess_bulk), optim_neff)
+models <- list()
+models[["single"]] <- cmdstan_model("logistic.stan")
+models[["threads-no-flags"]] <- cmdstan_model("logistic_reduce_sum.stan", cpp_options = list(stan_threads = TRUE))
+models[["threads-optims"]] <- cmdstan_model("logistic_reduce_sum.stan", exe_file = "threaded_optims", cpp_options = list(stan_threads = TRUE))
+models[["threads-norangechecks"]] <- cmdstan_model("logistic_reduce_sum.stan", exe_file = "threaded_norangeheck", cpp_options = list(stan_threads = TRUE, stan_no_range_checks = TRUE))
+models[["threads-norangechecks-optims"]] <- cmdstan_model("logistic_reduce_sum.stan", exe_file = "threaded_norangecheck_optims", cpp_options = list(stan_threads = TRUE, stan_cpp_optims = TRUE, stan_no_range_checks = TRUE))
+
+seeds <- c(1)#,2,3,4,5)
+repeats <- 1
+chains = c(1,2)#,4)
+threads <- c(2)#, 4, 8, 16)
+
+iter_warmup <- 1000
+iter_sampling <- 1000
+
+results <- data.frame()
+
+is_threaded_model <- function(model) {
+  is.null(model$cpp_options()[["stan_threads"]]) || !isTRUE(model$cpp_options()[["stan_threads"]])
 }
-data.frame(single=single,
-           multi=multi,
-           optim=optim,
-           single_neff=single_neff,
-           multi_neff=multi_neff,
-           optim_neff=optim_neff,
-           seed=seeds) %>% write.csv(., file="reduce_sum_tutorial.csv")
+
+for (n in names(models)) {
+  for (ch in chains) { 
+    if (is_threaded_model(models[[n]])) {
+    threads_vec <- 1
+    } else {
+    threads_vec <- threads
+    }
+    for(t in threads_vec) {
+      for (seed in seeds) {
+        for (rep in repeats) {
+          fit <- models[[n]]$sample(redcard_data,
+                seed = seed,
+                chains = ch,
+                parallel_chains = ch,
+                threads_per_chain = if (!is_threaded_model(models[[n]])) t else NULL,
+                iter_warmup = iter_warmup,
+                iter_sampling = iter_sampling)
+          print(n)
+          results <- rbind(results, list(
+                            name = n,
+                            chains = ch,
+                            threads = t,
+                            seed = seed,
+                            rep = rep,
+                            time = fit$time()$total,
+                            neff = mean(fit$summary(NULL, c("ess_bulk"))$ess_bulk)
+          ))
+          print(results)
+        }
+      }
+    }
+  }
+}
+      
+saveRDS(results, "reduce_sum_tutorial.RDS")
